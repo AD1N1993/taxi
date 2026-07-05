@@ -3,6 +3,7 @@ import { db } from './db/in-memory.db';
 import { DriverInputDto } from './drivers/dto/driver.input-dto';
 import { Driver } from './drivers/types/driver';
 import { HttpStatus } from './core/types/http-statuses';
+import { validateDriverInputDto } from './drivers/validation/vehicleInputDtoValidation';
 
 export const setupApp = (app: Express) => {
   app.use(express.json());
@@ -20,14 +21,21 @@ export const setupApp = (app: Express) => {
       (driver) => driver.id === parseInt(req.params.id, 10),
     );
     if (!driver) {
-      res.status(404).send('Driver not found');
+      res.status(HttpStatus.NotFound).send('Driver not found');
+      return;
     }
-    res.status(200).send(driver);
+    res.status(HttpStatus.Ok).send(driver);
   });
 
   app.post(
     '/drivers',
     (req: Request<{}, {}, DriverInputDto>, res: Response) => {
+      const errors = validateDriverInputDto(req.body);
+      if (errors.length > 0) {
+        res.status(HttpStatus.BadRequest).send({ errorMessages: errors });
+        return;
+      }
+
       const newDriver: Driver = {
         id: db.drivers.length ? db.drivers[db.drivers.length - 1].id + 1 : 1,
         name: req.body.name,
@@ -43,6 +51,37 @@ export const setupApp = (app: Express) => {
       };
       db.drivers.push(newDriver);
       res.status(HttpStatus.Created).send(newDriver);
+    },
+  );
+
+  app.put(
+    '/drivers/:id',
+    (req: Request<{ id: string }, {}, DriverInputDto>, res: Response) => {
+      const errors = validateDriverInputDto(req.body);
+      if (errors.length > 0) {
+        res.status(HttpStatus.BadRequest).send({ errorMessages: errors });
+        return;
+      }
+
+      const driver = db.drivers.find(
+        (driver) => driver.id === parseInt(req.params.id, 10),
+      );
+      if (!driver) {
+        res.status(HttpStatus.NotFound).send('Driver not found');
+        return;
+      }
+
+      driver.name = req.body.name;
+      driver.phoneNumber = req.body.phoneNumber;
+      driver.email = req.body.email;
+      driver.vehicleMake = req.body.vehicleMake;
+      driver.vehicleModel = req.body.vehicleModel;
+      driver.vehicleYear = req.body.vehicleYear;
+      driver.vehicleLicensePlate = req.body.vehicleLicensePlate;
+      driver.vehicleDescription = req.body.vehicleDescription;
+      driver.vehicleFeatures = req.body.vehicleFeatures;
+
+      res.sendStatus(HttpStatus.NoContent);
     },
   );
 
