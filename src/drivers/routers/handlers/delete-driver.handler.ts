@@ -1,15 +1,15 @@
 import { Request, Response } from 'express';
-import { db } from '../../../db/in-memory.db';
 import { HttpStatus } from '../../../core/types/http-statuses';
 import { createErrorMessages } from '../../../core/utils/error.utils';
+import { driversRepository } from '../../repositories/drivers.repository';
 
 export function deleteDriverHandler(
   req: Request<{ id: string }>,
   res: Response,
 ) {
-  const index = db.drivers.findIndex((d) => d.id === +req.params.id);
+  const isDeleted = driversRepository.delete(+req.params.id);
 
-  if (index === -1) {
+  if (!isDeleted) {
     res
       .status(HttpStatus.NotFound)
       .send(
@@ -18,6 +18,5 @@ export function deleteDriverHandler(
     return;
   }
 
-  db.drivers.splice(index, 1);
   res.sendStatus(HttpStatus.NoContent);
 }

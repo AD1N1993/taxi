@@ -2,16 +2,15 @@ import { Request, Response } from 'express';
 import { DriverInputDto } from '../../dto/driver.input.dto';
 import { HttpStatus } from '../../../core/types/http-statuses';
 
-import { db } from '../../../db/in-memory.db';
 import { Driver } from '../../types/driver';
 import { createErrorMessages } from '../../../core/utils/error.utils';
 import { validateDriverInputDto } from '../../validation/driver-input-dto.validation';
+import { driversRepository } from '../../repositories/drivers.repository';
 
 export function createDriverHandler(
   req: Request<{}, {}, DriverInputDto>,
   res: Response,
 ) {
-  // Сначала валидируем тело запроса вручную.
   const errors = validateDriverInputDto(req.body);
 
   if (errors.length > 0) {
@@ -19,10 +18,7 @@ export function createDriverHandler(
     return;
   }
 
-  const lastDriver = db.drivers[db.drivers.length - 1];
-
-  const newDriver: Driver = {
-    id: lastDriver ? lastDriver.id + 1 : 1,
+  const newDriver: Omit<Driver, 'id'> = {
     name: req.body.name,
     phoneNumber: req.body.phoneNumber,
     email: req.body.email,
@@ -35,6 +31,6 @@ export function createDriverHandler(
     createdAt: new Date(),
   };
 
-  db.drivers.push(newDriver);
-  res.status(HttpStatus.Created).send(newDriver);
+  const createdDriver = driversRepository.create(newDriver);
+  res.status(HttpStatus.Created).send(createdDriver);
 }
