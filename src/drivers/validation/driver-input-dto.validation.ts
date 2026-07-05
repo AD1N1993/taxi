@@ -1,5 +1,5 @@
 import { ValidationError } from '../../core/types/validation-error';
-import { DriverInputDto } from '../dto/driver.input-dto';
+import { DriverInputDto } from '../dto/driver.input.dto';
 import { VehicleFeature } from '../types/driver';
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
