@@ -1,99 +1,90 @@
-import { ValidationError } from '../../core/types/validation-error';
-import { DriverInputDto } from '../dto/driver.input.dto';
+import { body } from 'express-validator';
 import { VehicleFeature } from '../types/driver';
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const nameValidation = body('name')
+  .isString()
+  .withMessage('name should be string')
+  .trim()
+  .isLength({ min: 2, max: 15 })
+  .withMessage('Length of name is not correct');
 
-const allowedFeatures = Object.values(VehicleFeature) as string[];
+const phoneNumberValidation = body('phoneNumber')
+  .isString()
+  .withMessage('phoneNumber should be string')
+  .trim()
+  .isLength({ min: 8, max: 15 })
+  .withMessage('Length of phoneNumber is not correct');
 
-export const validateDriverInputDto = (
-  data: DriverInputDto,
-): ValidationError[] => {
-  const errors: ValidationError[] = [];
+const emailValidation = body('email')
+  .isString()
+  .withMessage('email should be string')
+  .trim()
+  .isLength({ min: 5, max: 100 })
+  .withMessage('Length of email is not correct')
+  .isEmail();
 
-  if (
-    !data.name ||
-    typeof data.name !== 'string' ||
-    data.name.trim().length < 2 ||
-    data.name.trim().length > 15
-  ) {
-    errors.push({ field: 'name', message: 'Invalid name' });
-  }
+const vehicleMakeValidation = body('vehicleMake')
+  .isString()
+  .withMessage('vehicleMake should be string')
+  .trim()
+  .isLength({ min: 3, max: 100 })
+  .withMessage('Length of vehicleMake is not correct');
 
-  if (
-    !data.phoneNumber ||
-    typeof data.phoneNumber !== 'string' ||
-    data.phoneNumber.trim().length < 8 ||
-    data.phoneNumber.trim().length > 15
-  ) {
-    errors.push({ field: 'phoneNumber', message: 'Invalid phoneNumber' });
-  }
+const vehicleModelValidation = body('vehicleModel')
+  .isString()
+  .withMessage('vehicleModel should be string')
+  .trim()
+  .isLength({ min: 2, max: 100 })
+  .withMessage('Length of vehicleModel is not correct');
 
-  if (
-    !data.email ||
-    typeof data.email !== 'string' ||
-    !emailRegex.test(data.email.trim())
-  ) {
-    errors.push({ field: 'email', message: 'Invalid email' });
-  }
+const currentYear = new Date().getFullYear();
+const vehicleYearValidation = body('vehicleYear')
+  .isInt({ min: 1980, max: currentYear })
+  .withMessage('vehicleYear should be real year');
 
-  if (
-    !data.vehicleMake ||
-    typeof data.vehicleMake !== 'string' ||
-    data.vehicleMake.trim().length < 1
-  ) {
-    errors.push({ field: 'vehicleMake', message: 'Invalid vehicleMake' });
-  }
+const vehicleLicensePlateValidation = body('vehicleLicensePlate')
+  .isString()
+  .withMessage('vehicleLicensePlate should be string')
+  .trim()
+  .isLength({ min: 6, max: 10 })
+  .withMessage('Length of vehicleLicensePlate is not correct');
 
-  if (
-    !data.vehicleModel ||
-    typeof data.vehicleModel !== 'string' ||
-    data.vehicleModel.trim().length < 1
-  ) {
-    errors.push({ field: 'vehicleModel', message: 'Invalid vehicleModel' });
-  }
+const vehicleDescriptionValidation = body('vehicleDescription')
+  .optional({ nullable: true }) // Позволяет значению быть null
+  .isString()
+  .withMessage('vehicleDescription should be string')
+  .trim()
+  .isLength({ min: 10, max: 200 })
+  .withMessage('Length of vehicleDescription is not correct');
 
-  if (
-    data.vehicleYear === undefined ||
-    data.vehicleYear === null ||
-    typeof data.vehicleYear !== 'number' ||
-    Number.isNaN(data.vehicleYear)
-  ) {
-    errors.push({ field: 'vehicleYear', message: 'Invalid vehicleYear' });
-  }
+const vehicleFeaturesValidation = body('vehicleFeatures')
+  .isArray()
+  .withMessage('vehicleFeatures should be array')
+  .optional() // Позволяет массиву быть пустым
+  .custom((vehicleFeatures: Array<VehicleFeature>) => {
+    if (vehicleFeatures.length) {
+      const validFeatures = Object.values(VehicleFeature);
 
-  if (
-    !data.vehicleLicensePlate ||
-    typeof data.vehicleLicensePlate !== 'string' ||
-    data.vehicleLicensePlate.trim().length < 1
-  ) {
-    errors.push({
-      field: 'vehicleLicensePlate',
-      message: 'Invalid vehicleLicensePlate',
-    });
-  }
+      vehicleFeatures.forEach((feature) => {
+        if (!validFeatures.includes(feature)) {
+          throw new Error(
+            'vehicleFeatures should contain values of VehicleFeature',
+          );
+        }
+      });
+    }
+    return true;
+  });
 
-  if (
-    data.vehicleDescription !== null &&
-    typeof data.vehicleDescription !== 'string'
-  ) {
-    errors.push({
-      field: 'vehicleDescription',
-      message: 'Invalid vehicleDescription',
-    });
-  }
-
-  if (
-    !Array.isArray(data.vehicleFeatures) ||
-    data.vehicleFeatures.some(
-      (feature) => !allowedFeatures.includes(feature as string),
-    )
-  ) {
-    errors.push({
-      field: 'vehicleFeatures',
-      message: 'Invalid vehicleFeatures',
-    });
-  }
-
-  return errors;
-};
+// Набор middleware-валидаторов тела запроса на создание/обновление водителя.
+export const driverInputDtoValidation = [
+  nameValidation,
+  phoneNumberValidation,
+  emailValidation,
+  vehicleMakeValidation,
+  vehicleModelValidation,
+  vehicleYearValidation,
+  vehicleLicensePlateValidation,
+  vehicleDescriptionValidation,
+  vehicleFeaturesValidation,
+];

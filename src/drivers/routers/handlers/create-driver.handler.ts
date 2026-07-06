@@ -3,21 +3,12 @@ import { DriverInputDto } from '../../dto/driver.input.dto';
 import { HttpStatus } from '../../../core/types/http-statuses';
 
 import { Driver } from '../../types/driver';
-import { createErrorMessages } from '../../../core/utils/error.utils';
-import { validateDriverInputDto } from '../../validation/driver-input-dto.validation';
 import { driversRepository } from '../../repositories/drivers.repository';
 
 export function createDriverHandler(
   req: Request<{}, {}, DriverInputDto>,
   res: Response,
 ) {
-  const errors = validateDriverInputDto(req.body);
-
-  if (errors.length > 0) {
-    res.status(HttpStatus.BadRequest).send(createErrorMessages(errors));
-    return;
-  }
-
   const newDriver: Omit<Driver, 'id'> = {
     name: req.body.name,
     phoneNumber: req.body.phoneNumber,
