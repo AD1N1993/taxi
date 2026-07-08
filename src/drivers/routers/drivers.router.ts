@@ -8,8 +8,11 @@ import { DRIVERS_ROUTES } from '../constants/drivers.paths';
 import { idValidation } from '../../core/middlewares/validation/params-id.validation.middleware';
 import { inputValidationResultMiddleware } from '../../core/middlewares/validation/input-validation-result.middleware';
 import { driverInputDtoValidation } from '../validation/driver-input-dto.validation';
+import { superAdminGuardMiddleware } from '../../auth/middlewares/super-admin.guard.middleware';
 
 export const driversRouter = Router({});
+
+driversRouter.use(superAdminGuardMiddleware);
 
 driversRouter
   .get(DRIVERS_ROUTES.ROOT, getDriverListHandler)
