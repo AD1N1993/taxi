@@ -4,6 +4,8 @@ import { testingRouter } from './testing/routers/testing.router';
 import { setupSwagger } from './core/swagger/setup-swagger';
 import { DRIVERS_PATH } from './drivers/constants/drivers.paths';
 import { TESTING_PATH } from './testing/constants/testing.paths';
+import { RIDES_PATH } from './rides/constants/rides.paths';
+import { ridesRouter } from './rides/routers/rides.router';
 
 export const setupApp = (app: Express) => {
   app.use(express.json());
@@ -13,6 +15,7 @@ export const setupApp = (app: Express) => {
   });
 
   app.use(DRIVERS_PATH, driversRouter);
+  app.use(RIDES_PATH, ridesRouter);
   app.use(TESTING_PATH, testingRouter);
 
   setupSwagger(app);

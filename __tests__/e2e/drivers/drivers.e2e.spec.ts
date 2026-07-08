@@ -1,15 +1,20 @@
 import request from 'supertest';
 import express from 'express';
+import { VehicleFeature } from '../../../src/drivers/types/driver';
 import { setupApp } from '../../../src/setup-app';
 import { HttpStatus } from '../../../src/core/types/http-statuses';
 import { DriverInputDto } from '../../../src/drivers/dto/driver.input.dto';
 import { DRIVERS_PATH } from '../../../src/drivers/constants/drivers.paths';
+import { generateBasicAuthToken } from '../../utils/generate-admin-auth-token';
+import { clearDb } from '../../utils/clear-db';
 
-describe('Driver API', () => {
+describe('Driver API body validation check', () => {
   const app = express();
   setupApp(app);
 
-  const testDriverData: DriverInputDto = {
+  const adminToken = generateBasicAuthToken();
+
+  const correctTestDriverData: DriverInputDto = {
     name: 'Valentin',
     phoneNumber: '123-456-7890',
     email: 'valentin@example.com',
@@ -17,109 +22,157 @@ describe('Driver API', () => {
     vehicleModel: 'X5',
     vehicleYear: 2021,
     vehicleLicensePlate: 'ABC-123',
-    vehicleDescription: null,
-    vehicleFeatures: [],
+    vehicleDescription: 'Some description',
+    vehicleFeatures: [VehicleFeature.ChildSeat],
   };
 
   beforeAll(async () => {
-    await request(app)
-      .delete('/api/testing/all-data')
-      .expect(HttpStatus.NoContent);
+    await clearDb(app);
   });
 
-  it('✅ should create driver; POST /api/drivers', async () => {
-    const newDriver: DriverInputDto = {
-      ...testDriverData,
-      name: 'Feodor',
-      phoneNumber: '987-654-3210',
-      email: 'feodor@example.com',
-    };
-
+  it('❌ should return 401 without auth; POST /api/drivers', async () => {
     await request(app)
       .post(DRIVERS_PATH)
-      .send(newDriver)
-      .expect(HttpStatus.Created);
+      .send(correctTestDriverData)
+      .expect(HttpStatus.Unauthorized);
   });
 
-  it('✅ should return drivers list; GET /api/drivers', async () => {
-    await request(app)
+  it(`❌ should not create driver when incorrect body passed; POST /api/drivers`, async () => {
+    const invalidDataSet1 = await request(app)
       .post(DRIVERS_PATH)
-      .send({ ...testDriverData, name: 'Another Driver' })
-      .expect(HttpStatus.Created);
+      .set('Authorization', adminToken)
+      .send({
+        ...correctTestDriverData,
+        name: '   ',
+        phoneNumber: '    ',
+        email: 'invalid email',
+        vehicleMake: '',
+      })
+      .expect(HttpStatus.BadRequest);
 
-    await request(app)
+    expect(invalidDataSet1.body.errorMessages).toHaveLength(4);
+
+    const invalidDataSet2 = await request(app)
       .post(DRIVERS_PATH)
-      .send({ ...testDriverData, name: 'Another Driver2' })
-      .expect(HttpStatus.Created);
+      .set('Authorization', adminToken)
+      .send({
+        ...correctTestDriverData,
+        phoneNumber: '', // empty string
+        vehicleModel: '', // empty string
+        vehicleYear: 'year', // incorrect number
+        vehicleLicensePlate: '', // empty string
+      })
+      .expect(HttpStatus.BadRequest);
 
+    expect(invalidDataSet2.body.errorMessages).toHaveLength(4);
+
+    const invalidDataSet3 = await request(app)
+      .post(DRIVERS_PATH)
+      .set('Authorization', adminToken)
+      .send({
+        ...correctTestDriverData,
+        name: 'A', // too short
+      })
+      .expect(HttpStatus.BadRequest);
+
+    expect(invalidDataSet3.body.errorMessages).toHaveLength(1);
+
+    // check что никто не создался
     const driverListResponse = await request(app)
       .get(DRIVERS_PATH)
-      .expect(HttpStatus.Ok);
-
-    expect(driverListResponse.body).toBeInstanceOf(Array);
-    expect(driverListResponse.body.length).toBeGreaterThanOrEqual(2);
+      .set('Authorization', adminToken);
+    expect(driverListResponse.body).toHaveLength(0);
   });
 
-  it('✅ should return driver by id; GET /api/drivers/:id', async () => {
-    const createResponse = await request(app)
+  it('❌ should not update driver when incorrect data passed; PUT /api/drivers/:id', async () => {
+    const {
+      body: { id: createdDriverId },
+    } = await request(app)
       .post(DRIVERS_PATH)
-      .send({ ...testDriverData, name: 'Another Driver' })
+      .set('Authorization', adminToken)
+      .send({ ...correctTestDriverData })
       .expect(HttpStatus.Created);
 
-    const getResponse = await request(app)
-      .get(`${DRIVERS_PATH}/${createResponse.body.id}`)
-      .expect(HttpStatus.Ok);
+    const invalidDataSet1 = await request(app)
+      .put(`${DRIVERS_PATH}/${createdDriverId}`)
+      .set('Authorization', adminToken)
+      .send({
+        ...correctTestDriverData,
+        name: '   ',
+        phoneNumber: '    ',
+        email: 'invalid email',
+        vehicleMake: '',
+      })
+      .expect(HttpStatus.BadRequest);
 
-    expect(getResponse.body).toEqual({
-      ...createResponse.body,
-      id: expect.any(Number),
-      createdAt: expect.any(String),
-    });
-  });
+    expect(invalidDataSet1.body.errorMessages).toHaveLength(4);
 
-  it('✅ should update driver; PUT /api/drivers/:id', async () => {
-    const createResponse = await request(app)
-      .post(DRIVERS_PATH)
-      .send({ ...testDriverData, name: 'Another Driver' })
-      .expect(HttpStatus.Created);
+    const invalidDataSet2 = await request(app)
+      .put(`${DRIVERS_PATH}/${createdDriverId}`)
+      .set('Authorization', adminToken)
+      .send({
+        ...correctTestDriverData,
+        phoneNumber: '', // empty string
+        vehicleModel: '', // empty string
+        vehicleYear: 'year', // incorrect number
+        vehicleLicensePlate: '', // empty string
+      })
+      .expect(HttpStatus.BadRequest);
 
-    const driverUpdateData: DriverInputDto = {
-      ...testDriverData,
-      name: 'Updated Name',
-      phoneNumber: '999-888-7777',
-      email: 'updated@example.com',
-      vehicleMake: 'Tesla',
-    };
+    expect(invalidDataSet2.body.errorMessages).toHaveLength(4);
 
-    await request(app)
-      .put(`${DRIVERS_PATH}/${createResponse.body.id}`)
-      .send(driverUpdateData)
-      .expect(HttpStatus.NoContent);
+    const invalidDataSet3 = await request(app)
+      .put(`${DRIVERS_PATH}/${createdDriverId}`)
+      .set('Authorization', adminToken)
+      .send({
+        ...correctTestDriverData,
+        name: 'A', //too short
+      })
+      .expect(HttpStatus.BadRequest);
 
-    const driverResponse = await request(app).get(
-      `${DRIVERS_PATH}/${createResponse.body.id}`,
-    );
+    expect(invalidDataSet3.body.errorMessages).toHaveLength(1);
+
+    const driverResponse = await request(app)
+      .get(`${DRIVERS_PATH}/${createdDriverId}`)
+      .set('Authorization', adminToken);
 
     expect(driverResponse.body).toEqual({
-      ...driverUpdateData,
-      id: createResponse.body.id,
+      ...correctTestDriverData,
+      id: createdDriverId,
       createdAt: expect.any(String),
     });
   });
 
-  it(`✅ DELETE /api/drivers/:id and check after NOT FOUND`, async () => {
-    const res = await request(app)
+  it('❌ should not update driver when incorrect features passed; PUT /api/drivers/:id', async () => {
+    const {
+      body: { id: createdDriverId },
+    } = await request(app)
       .post(DRIVERS_PATH)
-      .send({ ...testDriverData, name: 'Another Driver' })
+      .set('Authorization', adminToken)
+      .send({ ...correctTestDriverData })
       .expect(HttpStatus.Created);
 
     await request(app)
-      .delete(`${DRIVERS_PATH}/${res.body.id}`)
-      .expect(HttpStatus.NoContent);
+      .put(`${DRIVERS_PATH}/${createdDriverId}`)
+      .set('Authorization', adminToken)
+      .send({
+        ...correctTestDriverData,
+        vehicleFeatures: [
+          VehicleFeature.ChildSeat,
+          'invalid-feature',
+          VehicleFeature.WiFi,
+        ],
+      })
+      .expect(HttpStatus.BadRequest);
 
-    const driverResponse = await request(app).get(
-      `${DRIVERS_PATH}/${res.body.id}`,
-    );
-    expect(driverResponse.status).toBe(HttpStatus.NotFound);
+    const driverResponse = await request(app)
+      .get(`${DRIVERS_PATH}/${createdDriverId}`)
+      .set('Authorization', adminToken);
+
+    expect(driverResponse.body).toEqual({
+      ...correctTestDriverData,
+      id: createdDriverId,
+      createdAt: expect.any(String),
+    });
   });
 });

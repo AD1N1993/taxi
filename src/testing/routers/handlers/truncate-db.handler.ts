@@ -4,5 +4,6 @@ import { HttpStatus } from '../../../core/types/http-statuses';
 
 export function truncateDbHandler(req: Request, res: Response) {
   db.drivers = [];
+  db.rides = [];
   res.sendStatus(HttpStatus.NoContent);
 }
