@@ -1,4 +1,4 @@
-import { param } from 'express-validator';
+import { body, param } from 'express-validator';
 
 export const idValidation = param('id')
   .exists()
@@ -7,3 +7,14 @@ export const idValidation = param('id')
   .withMessage('ID must be a string')
   .isNumeric()
   .withMessage('ID must be a numeric string');
+
+// Для JSON:API-обновления: id в теле (data.id) должен совпадать с id в URL.
+export const dataIdMatchValidation = body('data.id')
+  .exists()
+  .withMessage('ID in body is required')
+  .custom((value, { req }) => {
+    if (String(value) !== req.params?.id) {
+      throw new Error('ID in URL and body must match');
+    }
+    return true;
+  });

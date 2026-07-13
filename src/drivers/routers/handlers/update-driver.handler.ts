@@ -1,14 +1,17 @@
 import { Request, Response } from 'express';
-import { DriverInputDto } from '../../dto/driver.input.dto';
 import { HttpStatus } from '../../../core/types/http-statuses';
 import { createErrorMessages } from '../../../core/utils/error.utils';
 import { driversRepository } from '../../repositories/drivers.repository';
+import { DriverUpdateInput } from '../../dto/driver.input';
 
 export function updateDriverHandler(
-  req: Request<{ id: string }, {}, DriverInputDto>,
+  req: Request<{ id: string }, {}, DriverUpdateInput>,
   res: Response,
 ) {
-  const isUpdated = driversRepository.update(+req.params.id, req.body);
+  const isUpdated = driversRepository.update(
+    +req.params.id,
+    req.body.data.attributes,
+  );
 
   if (!isUpdated) {
     res
