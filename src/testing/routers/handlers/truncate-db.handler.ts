@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
-import { db } from '../../../db/in-memory.db';
+import { getAllCollections } from '../../../db/collections';
 import { HttpStatus } from '../../../core/types/http-statuses';
 
-export function truncateDbHandler(req: Request, res: Response) {
-  db.drivers = [];
-  db.rides = [];
+export async function truncateDbHandler(req: Request, res: Response) {
+  await Promise.all(
+    getAllCollections().map((collection) => collection.deleteMany({})),
+  );
   res.sendStatus(HttpStatus.NoContent);
 }

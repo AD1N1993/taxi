@@ -11,6 +11,8 @@ import { clearDb } from '../../utils/clear-db';
 import { getDriverDto } from '../../utils/drivers/get-driver-dto';
 import { createDriver } from '../../utils/drivers/create-driver';
 import { getDriverById } from '../../utils/drivers/get-driver-by-id';
+import { runDB, stopDb } from '../../../src/db/mongo.db';
+import { SETTINGS } from '../../../src/settings/config';
 
 describe('Driver API body validation check', () => {
   const app = express();
@@ -32,7 +34,12 @@ describe('Driver API body validation check', () => {
   });
 
   beforeAll(async () => {
+    await runDB(SETTINGS.MONGO_URL);
     await clearDb(app);
+  });
+
+  afterAll(async () => {
+    await stopDb();
   });
 
   it('❌ should return 401 without auth; POST /api/drivers', async () => {

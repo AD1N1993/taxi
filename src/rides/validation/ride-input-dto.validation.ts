@@ -12,8 +12,8 @@ const clientNameValidation = body('data.attributes.clientName')
   .withMessage('Length of clientName is not correct');
 
 const driverIdValidation = body('data.attributes.driverId')
-  .isInt({ gt: 0 })
-  .withMessage('driverId must be a positive number');
+  .isMongoId()
+  .withMessage('driverId must be a valid ObjectId');
 
 const priceValidation = body('data.attributes.price')
   .isFloat({ gt: 0 }) // цена должна быть числом больше 0

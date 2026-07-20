@@ -1,45 +1,44 @@
 import { Driver } from '../types/driver';
-import { db } from '../../db/in-memory.db';
+import { ObjectId, WithId } from 'mongodb';
+import { driverCollection } from '../../db/collections';
 
+// Репозиторий отвечает ТОЛЬКО за доступ к данным (CRUD).
+// Он не знает про HTTP и не решает, что делать при "не найдено":
+// операции изменения возвращают boolean, а решение о статусе ответа принимает handler.
 export const driversRepository = {
-  findAll(): Driver[] {
-    return db.drivers;
+  async findAll(): Promise<WithId<Driver>[]> {
+    return driverCollection.find().toArray();
   },
 
-  findById(id: number): Driver | null {
-    return db.drivers.find((d) => d.id === id) ?? null;
+  async findById(id: string): Promise<WithId<Driver> | null> {
+    return driverCollection.findOne({ _id: new ObjectId(id) });
   },
 
-  create(newDriver: Omit<Driver, 'id'>): Driver {
-    const lastDriver = db.drivers[db.drivers.length - 1];
-    const created: Driver = {
-      id: lastDriver ? lastDriver.id + 1 : 1,
-      ...newDriver,
-    };
-
-    db.drivers.push(created);
-    return created;
+  async create(newDriver: Driver): Promise<WithId<Driver>> {
+    const insertResult = await driverCollection.insertOne(newDriver);
+    return { ...newDriver, _id: insertResult.insertedId };
   },
 
-  update(id: number, driver: Omit<Driver, 'id' | 'createdAt'>): boolean {
-    const index = db.drivers.findIndex((d) => d.id === id);
+  // Принимает уже готовый доменный объект (без createdAt) — маппинг из DTO делает handler.
+  // Возвращает true, если водитель найден и обновлён, иначе false.
+  async update(
+    id: string,
+    driver: Omit<Driver, 'createdAt'>,
+  ): Promise<boolean> {
+    const updateResult = await driverCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: driver },
+    );
 
-    if (index === -1) {
-      return false;
-    }
-
-    db.drivers[index] = { ...db.drivers[index], ...driver };
-    return true;
+    return updateResult.matchedCount > 0;
   },
 
-  delete(id: number): boolean {
-    const index = db.drivers.findIndex((d) => d.id === id);
+  // Возвращает true, если водитель найден и удалён, иначе false.
+  async delete(id: string): Promise<boolean> {
+    const deleteResult = await driverCollection.deleteOne({
+      _id: new ObjectId(id),
+    });
 
-    if (index === -1) {
-      return false;
-    }
-
-    db.drivers.splice(index, 1);
-    return true;
+    return deleteResult.deletedCount > 0;
   },
 };

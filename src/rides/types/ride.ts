@@ -3,12 +3,10 @@ export enum Currency {
   EUR = 'eur',
 }
 
-// Данные храним в массиве в памяти, поэтому id — обычное число.
 // Данные водителя и машины копируются в поездку в момент создания.
 export type Ride = {
-  id: number;
   clientName: string;
-  driverId: number;
+  driverId: string;
   driverName: string;
   vehicleLicensePlate: string;
   vehicleName: string;

@@ -5,8 +5,8 @@ export const idValidation = param('id')
   .withMessage('ID is required')
   .isString()
   .withMessage('ID must be a string')
-  .isNumeric()
-  .withMessage('ID must be a numeric string');
+  .isMongoId()
+  .withMessage('Incorrect format of ObjectId');
 
 // Для JSON:API-обновления: id в теле (data.id) должен совпадать с id в URL.
 export const dataIdMatchValidation = body('data.id')

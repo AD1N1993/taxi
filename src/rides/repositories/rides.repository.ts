@@ -1,25 +1,19 @@
+import { ObjectId, WithId } from 'mongodb';
 import { Ride } from '../types/ride';
-import { db } from '../../db/in-memory.db';
+import { rideCollection } from '../../db/collections';
 
-// Репозиторий (DAL) отвечает ТОЛЬКО за доступ к данным поездок в in-memory-хранилище.
+// Репозиторий отвечает ТОЛЬКО за доступ к данным (CRUD).
 export const ridesRepository = {
-  findAll(): Ride[] {
-    return db.rides;
+  async findAll(): Promise<WithId<Ride>[]> {
+    return rideCollection.find().toArray();
   },
 
-  findById(id: number): Ride | null {
-    return db.rides.find((r) => r.id === id) ?? null;
+  async findById(id: string): Promise<WithId<Ride> | null> {
+    return rideCollection.findOne({ _id: new ObjectId(id) });
   },
 
-  // Принимает доменные поля без id (id генерируем здесь) и возвращает созданную поездку.
-  create(newRide: Omit<Ride, 'id'>): Ride {
-    const lastRide = db.rides[db.rides.length - 1];
-    const created: Ride = {
-      id: lastRide ? lastRide.id + 1 : 1,
-      ...newRide,
-    };
-
-    db.rides.push(created);
-    return created;
+  async create(newRide: Ride): Promise<WithId<Ride>> {
+    const insertResult = await rideCollection.insertOne(newRide);
+    return { ...newRide, _id: insertResult.insertedId };
   },
 };

@@ -7,7 +7,7 @@ import { createErrorMessages } from '../../../core/utils/error.utils';
 import { RideCreateInput } from '../../dto/ride.input';
 import { mapToRideOutput } from '../mappers/map-ride-to-output';
 
-export function createRideHandler(
+export async function createRideHandler(
   req: Request<{}, {}, RideCreateInput>,
   res: Response,
 ) {
@@ -15,7 +15,7 @@ export function createRideHandler(
   const attributes = req.body.data.attributes;
 
   // Поездку можно создать только для существующего водителя.
-  const driver = driversRepository.findById(attributes.driverId);
+  const driver = await driversRepository.findById(attributes.driverId);
 
   if (!driver) {
     res
@@ -29,9 +29,9 @@ export function createRideHandler(
   }
 
   // Данные водителя и его машины копируем в поездку в момент создания.
-  const newRide: Omit<Ride, 'id'> = {
+  const newRide: Ride = {
     clientName: attributes.clientName,
-    driverId: driver.id,
+    driverId: driver._id.toString(),
     driverName: driver.name,
     vehicleLicensePlate: driver.vehicleLicensePlate,
     vehicleName: `${driver.vehicleMake} ${driver.vehicleModel}`,
@@ -45,6 +45,6 @@ export function createRideHandler(
     },
   };
 
-  const createdRide = ridesRepository.create(newRide);
+  const createdRide = await ridesRepository.create(newRide);
   res.status(HttpStatus.Created).send(mapToRideOutput(createdRide));
 }

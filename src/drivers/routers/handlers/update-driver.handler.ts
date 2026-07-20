@@ -4,12 +4,12 @@ import { createErrorMessages } from '../../../core/utils/error.utils';
 import { driversRepository } from '../../repositories/drivers.repository';
 import { DriverUpdateInput } from '../../dto/driver.input';
 
-export function updateDriverHandler(
+export async function updateDriverHandler(
   req: Request<{ id: string }, {}, DriverUpdateInput>,
   res: Response,
 ) {
-  const isUpdated = driversRepository.update(
-    +req.params.id,
+  const isUpdated = await driversRepository.update(
+    req.params.id,
     req.body.data.attributes,
   );
 

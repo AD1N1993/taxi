@@ -5,11 +5,8 @@ import {
 import { ResourceType } from '../../core/types/resource-type';
 import { Ride } from '../types/ride';
 
-// Атрибуты поездки в ответе = доменные поля Ride без служебных id/createdAt/updatedAt.
-export type RideResourceAttributes = Omit<
-  Ride,
-  'id' | 'createdAt' | 'updatedAt'
->;
+// Атрибуты поездки в ответе = доменные поля Ride без служебных createdAt/updatedAt.
+export type RideResourceAttributes = Omit<Ride, 'createdAt' | 'updatedAt'>;
 
 // Ответ с одной поездкой: { data: { type, id, attributes } }.
 export type RideOutput = JsonApiSingleResponse<

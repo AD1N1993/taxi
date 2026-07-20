@@ -3,11 +3,11 @@ import { HttpStatus } from '../../../core/types/http-statuses';
 import { createErrorMessages } from '../../../core/utils/error.utils';
 import { driversRepository } from '../../repositories/drivers.repository';
 
-export function deleteDriverHandler(
+export async function deleteDriverHandler(
   req: Request<{ id: string }>,
   res: Response,
 ) {
-  const isDeleted = driversRepository.delete(+req.params.id);
+  const isDeleted = await driversRepository.delete(req.params.id);
 
   if (!isDeleted) {
     res

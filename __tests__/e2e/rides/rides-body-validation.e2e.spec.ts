@@ -7,6 +7,8 @@ import { clearDb } from '../../utils/clear-db';
 import { RIDES_PATH } from '../../../src/rides/constants/rides.paths';
 import { ResourceType } from '../../../src/core/types/resource-type';
 import { Currency } from '../../../src/rides/types/ride';
+import { runDB, stopDb } from '../../../src/db/mongo.db';
+import { SETTINGS } from '../../../src/settings/config';
 
 describe('Rides API body validation check', () => {
   const app = express();
@@ -20,7 +22,12 @@ describe('Rides API body validation check', () => {
   });
 
   beforeAll(async () => {
+    await runDB(SETTINGS.MONGO_URL);
     await clearDb(app);
+  });
+
+  afterAll(async () => {
+    await stopDb();
   });
 
   it(`❌ should not create ride when incorrect body passed; POST /api/rides`, async () => {

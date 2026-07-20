@@ -11,6 +11,8 @@ import { getDriverDto } from '../../utils/drivers/get-driver-dto';
 import { createDriver } from '../../utils/drivers/create-driver';
 import { getDriverById } from '../../utils/drivers/get-driver-by-id';
 import { updateDriver } from '../../utils/drivers/update-driver';
+import { runDB, stopDb } from '../../../src/db/mongo.db';
+import { SETTINGS } from '../../../src/settings/config';
 
 describe('Driver API', () => {
   const app = express();
@@ -19,7 +21,12 @@ describe('Driver API', () => {
   const adminToken = generateBasicAuthToken();
 
   beforeAll(async () => {
+    await runDB(SETTINGS.MONGO_URL);
     await clearDb(app);
+  });
+
+  afterAll(async () => {
+    await stopDb();
   });
 
   it('✅ should create driver; POST /api/drivers', async () => {

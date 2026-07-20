@@ -14,9 +14,9 @@ export async function createRide(
   app: Express,
   rideAttributes?: Partial<RideAttributes>,
 ): Promise<RideOutput> {
-  // Для поездки нужен существующий водитель. id ресурса — строка, driverId — число.
+  // Для поездки нужен существующий водитель. driverId — строковый ObjectId.
   const driver = await createDriver(app);
-  const driverId = Number(driver.data.id);
+  const driverId = driver.data.id;
 
   const testRideData: RideCreateInput = {
     data: {

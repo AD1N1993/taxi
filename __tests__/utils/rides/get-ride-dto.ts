@@ -2,7 +2,7 @@ import { RideAttributes } from '../../../src/rides/dto/ride-attributes';
 import { Currency } from '../../../src/rides/types/ride';
 
 // Корректные атрибуты поездки по умолчанию (без JSON:API-обёртки).
-export function getRideDto(driverId: number): RideAttributes {
+export function getRideDto(driverId: string): RideAttributes {
   return {
     driverId,
     clientName: 'Bob',

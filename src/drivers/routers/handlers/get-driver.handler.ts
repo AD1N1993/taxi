@@ -4,8 +4,11 @@ import { createErrorMessages } from '../../../core/utils/error.utils';
 import { driversRepository } from '../../repositories/drivers.repository';
 import { mapToDriverOutput } from '../mappers/map-driver-to-output';
 
-export function getDriverHandler(req: Request<{ id: string }>, res: Response) {
-  const driver = driversRepository.findById(+req.params.id);
+export async function getDriverHandler(
+  req: Request<{ id: string }>,
+  res: Response,
+) {
+  const driver = await driversRepository.findById(req.params.id);
 
   if (!driver) {
     res

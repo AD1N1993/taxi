@@ -4,8 +4,11 @@ import { HttpStatus } from '../../../core/types/http-statuses';
 import { createErrorMessages } from '../../../core/utils/error.utils';
 import { mapToRideOutput } from '../mappers/map-ride-to-output';
 
-export function getRideHandler(req: Request<{ id: string }>, res: Response) {
-  const ride = ridesRepository.findById(+req.params.id);
+export async function getRideHandler(
+  req: Request<{ id: string }>,
+  res: Response,
+) {
+  const ride = await ridesRepository.findById(req.params.id);
 
   if (!ride) {
     res
