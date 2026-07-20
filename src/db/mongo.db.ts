@@ -15,7 +15,8 @@ export async function runDB(url: string): Promise<void> {
   try {
     await client.connect();
     await db.command({ ping: 1 });
-    console.log('✅ Connected to the database');
+    const target = url.includes('mongodb.net') ? 'Atlas (cloud)' : 'local';
+    console.log(`✅ Connected to the database [${target}]`);
   } catch (e) {
     await client.close();
     throw new Error(`❌ Database not connected: ${e}`);

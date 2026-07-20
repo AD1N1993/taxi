@@ -11,15 +11,13 @@ paths:
         - BasicAuth: []
       responses:
         200:
-          description: List of all rides
+          description: List of all rides (JSON:API)
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Ride'
+                $ref: '#/components/schemas/RideListResponse'
     post:
-      summary: Create a new ride
+      summary: Create a new ride for an existing driver
       tags: [Rides]
       security:
         - BasicAuth: []
@@ -28,20 +26,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RideInputDto'
+              $ref: '#/components/schemas/RideCreateRequest'
       responses:
         201:
           description: Ride successfully created for an existing driver
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Ride'
+                $ref: '#/components/schemas/RideResponse'
         400:
           description: Validation error or the driver does not exist
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthorized
 
   /api/rides/{id}:
     get:
@@ -50,20 +50,16 @@ paths:
       security:
         - BasicAuth: []
       parameters:
-        - in: path
-          name: id
-          required: true
-          description: The unique identifier of the ride
-          schema:
-            type: integer
-            example: 5
+        - $ref: '#/components/parameters/RideId'
       responses:
         200:
           description: The requested ride
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Ride'
+                $ref: '#/components/schemas/RideResponse'
+        400:
+          description: Invalid ObjectId format
         404:
           description: Ride not found
 
@@ -72,35 +68,34 @@ components:
     BasicAuth:
       type: http
       scheme: basic
+
+  parameters:
+    RideId:
+      in: path
+      name: id
+      required: true
+      description: MongoDB ObjectId of the ride
+      schema:
+        type: string
+        example: '66efeb12eb3dafea3c3971fc'
+
   schemas:
-    Ride:
+    RideAttributes:
       type: object
-      required:
-        - id
-        - clientName
-        - driverId
-        - driverName
-        - vehicleLicensePlate
-        - vehicleName
-        - price
-        - currency
-        - createdAt
       properties:
-        id:
-          type: integer
-          example: 5
         clientName:
           type: string
           example: 'Alice Johnson'
         driverId:
-          type: integer
-          example: 2
+          type: string
+          description: MongoDB ObjectId of an existing driver
+          example: '66efeaadeb3dafea3c3971fb'
         driverName:
           type: string
           example: 'Tom Rider'
         vehicleLicensePlate:
           type: string
-          example: 'XYZ 1234'
+          example: 'XYZ-1234'
         vehicleName:
           type: string
           example: 'Toyota Camry'
@@ -112,15 +107,6 @@ components:
           type: string
           enum: [usd, eur]
           example: 'usd'
-        createdAt:
-          type: string
-          format: date-time
-          example: '2023-03-01T14:30:00Z'
-        updatedAt:
-          type: string
-          format: date-time
-          nullable: true
-          example: null
         addresses:
           type: object
           properties:
@@ -130,36 +116,88 @@ components:
             to:
               type: string
               example: '456 Elm St, Townsville'
-    RideInputDto:
+
+    RideResource:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [rides]
+          example: 'rides'
+        id:
+          type: string
+          description: MongoDB ObjectId of the ride
+          example: '66efeb12eb3dafea3c3971fc'
+        attributes:
+          $ref: '#/components/schemas/RideAttributes'
+
+    RideResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/RideResource'
+
+    RideListResponse:
+      type: object
+      properties:
+        meta:
+          type: object
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RideResource'
+
+    RideCreateRequest:
       type: object
       required:
-        - clientName
-        - price
-        - currency
-        - driverId
-        - fromAddress
-        - toAddress
+        - data
       properties:
-        clientName:
-          type: string
-          example: 'Alice Johnson'
-        price:
-          type: number
-          format: float
-          example: 15.75
-        currency:
-          type: string
-          enum: [usd, eur]
-          example: 'usd'
-        driverId:
-          type: integer
-          example: 2
-        fromAddress:
-          type: string
-          example: '123 Main St, Cityville'
-        toAddress:
-          type: string
-          example: '456 Elm St, Townsville'
+        data:
+          type: object
+          required:
+            - type
+            - attributes
+          properties:
+            type:
+              type: string
+              enum: [rides]
+              example: 'rides'
+            attributes:
+              type: object
+              required:
+                - clientName
+                - price
+                - currency
+                - driverId
+                - fromAddress
+                - toAddress
+              properties:
+                clientName:
+                  type: string
+                  description: '3-100 chars'
+                  example: 'Alice Johnson'
+                price:
+                  type: number
+                  format: float
+                  description: 'Must be greater than 0'
+                  example: 15.75
+                currency:
+                  type: string
+                  enum: [usd, eur]
+                  example: 'usd'
+                driverId:
+                  type: string
+                  description: MongoDB ObjectId of an existing driver
+                  example: '66efeaadeb3dafea3c3971fb'
+                fromAddress:
+                  type: string
+                  description: '10-200 chars'
+                  example: '123 Main St, Cityville'
+                toAddress:
+                  type: string
+                  description: '10-200 chars'
+                  example: '456 Elm St, Townsville'
+
     ValidationError:
       type: object
       properties:
@@ -168,7 +206,8 @@ components:
           example: 'clientName'
         message:
           type: string
-          example: 'Client name is required'
+          example: 'Length of clientName is not correct'
+
     ValidationErrorResponse:
       type: object
       properties:

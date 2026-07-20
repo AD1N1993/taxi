@@ -7,81 +7,79 @@ paths:
     get:
       summary: Get a list of all drivers
       tags: [Drivers]
+      security:
+        - BasicAuth: []
       responses:
         200:
-          description: List of all drivers
+          description: List of all drivers (JSON:API)
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Driver'
+                $ref: '#/components/schemas/DriverListResponse'
     post:
       summary: Add a new driver
       tags: [Drivers]
+      security:
+        - BasicAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DriverInputDto'
+              $ref: '#/components/schemas/DriverCreateRequest'
       responses:
         201:
           description: The driver was successfully created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Driver'
+                $ref: '#/components/schemas/DriverResponse'
         400:
           description: Validation error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ValidationErrorResponse'
+        401:
+          description: Unauthorized
 
   /api/drivers/{id}:
     get:
       summary: Get a driver by ID
       tags: [Drivers]
+      security:
+        - BasicAuth: []
       parameters:
-        - in: path
-          name: id
-          required: true
-          description: 'The unique identifier of the driver'
-          schema:
-            type: integer
-            example: 2
+        - $ref: '#/components/parameters/DriverId'
       responses:
         200:
           description: The requested driver
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Driver'
+                $ref: '#/components/schemas/DriverResponse'
+        400:
+          description: Invalid ObjectId format
         404:
           description: Driver not found
     put:
       summary: Update a driver by ID
       tags: [Drivers]
+      security:
+        - BasicAuth: []
       parameters:
-        - in: path
-          name: id
-          required: true
-          description: 'The unique identifier of the driver'
-          schema:
-            type: integer
-            example: 2
+        - $ref: '#/components/parameters/DriverId'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DriverInputDto'
+              $ref: '#/components/schemas/DriverUpdateRequest'
       responses:
         204:
           description: Driver updated successfully
         400:
-          description: Validation error
+          description: Validation error (including data.id/URL id mismatch)
           content:
             application/json:
               schema:
@@ -91,14 +89,10 @@ paths:
     delete:
       summary: Delete a driver by ID
       tags: [Drivers]
+      security:
+        - BasicAuth: []
       parameters:
-        - in: path
-          name: id
-          required: true
-          description: 'The unique identifier of the driver'
-          schema:
-            type: integer
-            example: 2
+        - $ref: '#/components/parameters/DriverId'
       responses:
         204:
           description: Driver deleted successfully
@@ -106,11 +100,25 @@ paths:
           description: Driver not found
 
 components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+
+  parameters:
+    DriverId:
+      in: path
+      name: id
+      required: true
+      description: MongoDB ObjectId of the driver
+      schema:
+        type: string
+        example: '66efeaadeb3dafea3c3971fb'
+
   schemas:
-    Driver:
+    DriverAttributes:
       type: object
       required:
-        - id
         - name
         - phoneNumber
         - email
@@ -119,109 +127,120 @@ components:
         - vehicleYear
         - vehicleLicensePlate
         - vehicleFeatures
-        - createdAt
       properties:
-        id:
-          type: integer
-          description: 'The unique identifier for the driver'
-          example: 2
         name:
           type: string
-          description: 'The full name of the driver'
+          description: 'Full name of the driver (2-15 chars)'
           example: 'Tom Rider'
         phoneNumber:
           type: string
-          description: "The driver's phone number"
+          description: "Driver's phone number (8-15 chars)"
           example: '123-456-7890'
         email:
           type: string
-          description: "The driver's email address"
+          format: email
+          description: "Driver's email address (5-100 chars)"
           example: 'tom.rider@example.com'
         vehicleMake:
           type: string
-          description: 'The make of the vehicle'
+          description: 'Make of the vehicle (3-100 chars)'
           example: 'Toyota'
         vehicleModel:
           type: string
-          description: 'The model of the vehicle'
+          description: 'Model of the vehicle (2-100 chars)'
           example: 'Camry'
         vehicleYear:
           type: integer
-          description: 'The year the vehicle was manufactured'
+          description: 'Year the vehicle was manufactured (1980 - current year)'
           example: 2020
         vehicleLicensePlate:
           type: string
-          description: "The vehicle's license plate number"
-          example: 'XYZ 1234'
+          description: "Vehicle's license plate number (6-10 chars)"
+          example: 'XYZ-1234'
         vehicleDescription:
           type: string
           nullable: true
-          description: 'A description of the vehicle, including any notable features or conditions'
+          description: 'Optional description of the vehicle (10-200 chars if provided)'
           example: 'A spacious SUV with leather seats and a sunroof.'
         vehicleFeatures:
           type: array
           items:
             type: string
             enum: [wi-fi, child-seat, pet-friendly]
-          description: 'Features available in the vehicle. Choose from the provided options'
+          description: 'Features available in the vehicle'
           example: ['wi-fi', 'pet-friendly']
-        createdAt:
-          type: string
-          format: date-time
-          description: 'The date and time when the driver was created'
-          example: '2023-03-05T12:00:00Z'
-    DriverInputDto:
+
+    DriverResource:
       type: object
-      required:
-        - name
-        - phoneNumber
-        - email
-        - vehicleMake
-        - vehicleModel
-        - vehicleYear
-        - vehicleLicensePlate
-        - vehicleFeatures
       properties:
-        name:
+        type:
           type: string
-          description: 'The full name of the driver'
-          example: 'Tom Rider'
-        phoneNumber:
+          enum: [drivers]
+          example: 'drivers'
+        id:
           type: string
-          description: "The driver's phone number"
-          example: '123-456-7890'
-        email:
-          type: string
-          description: "The driver's email address"
-          example: 'tom.rider@example.com'
-        vehicleMake:
-          type: string
-          description: 'The make of the vehicle'
-          example: 'Toyota'
-        vehicleModel:
-          type: string
-          description: 'The model of the vehicle'
-          example: 'Camry'
-        vehicleYear:
-          type: integer
-          description: 'The year the vehicle was manufactured'
-          example: 2025
-        vehicleLicensePlate:
-          type: string
-          description: "The vehicle's license plate number"
-          example: 'XYZ 1234'
-        vehicleDescription:
-          type: string
-          nullable: true
-          description: 'A description of the vehicle, including any notable features or conditions'
-          example: 'A spacious SUV with leather seats and a sunroof'
-        vehicleFeatures:
+          description: MongoDB ObjectId of the driver
+          example: '66efeaadeb3dafea3c3971fb'
+        attributes:
+          $ref: '#/components/schemas/DriverAttributes'
+
+    DriverResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/DriverResource'
+
+    DriverListResponse:
+      type: object
+      properties:
+        meta:
+          type: object
+        data:
           type: array
           items:
-            type: string
-            enum: [wi-fi, child-seat, pet-friendly]
-          description: 'Features available in the vehicle. Choose from the provided options'
-          example: ['wi-fi', 'pet-friendly']
+            $ref: '#/components/schemas/DriverResource'
+
+    DriverCreateRequest:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - type
+            - attributes
+          properties:
+            type:
+              type: string
+              enum: [drivers]
+              example: 'drivers'
+            attributes:
+              $ref: '#/components/schemas/DriverAttributes'
+
+    DriverUpdateRequest:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - type
+            - id
+            - attributes
+          properties:
+            type:
+              type: string
+              enum: [drivers]
+              example: 'drivers'
+            id:
+              type: string
+              description: 'Must match the :id in the URL'
+              example: '66efeaadeb3dafea3c3971fb'
+            attributes:
+              $ref: '#/components/schemas/DriverAttributes'
+
     ValidationError:
       type: object
       properties:
@@ -230,7 +249,8 @@ components:
           example: 'name'
         message:
           type: string
-          example: 'Invalid name'
+          example: 'Length of name is not correct'
+
     ValidationErrorResponse:
       type: object
       properties:
