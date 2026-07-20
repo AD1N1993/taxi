@@ -1,14 +1,14 @@
 import { Request, Response } from 'express';
 import { HttpStatus } from '../../../core/types/http-statuses';
 import { createErrorMessages } from '../../../core/utils/error.utils';
-import { driversRepository } from '../../repositories/drivers.repository';
+import { driversService } from '../../application/drivers.service';
 import { DriverUpdateInput } from '../../dto/driver.input';
 
 export async function updateDriverHandler(
   req: Request<{ id: string }, {}, DriverUpdateInput>,
   res: Response,
 ) {
-  const isUpdated = await driversRepository.update(
+  const isUpdated = await driversService.update(
     req.params.id,
     req.body.data.attributes,
   );

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { ridesRepository } from '../../repositories/rides.repository';
+import { ridesService } from '../../application/rides.service';
 import { HttpStatus } from '../../../core/types/http-statuses';
 import { createErrorMessages } from '../../../core/utils/error.utils';
 import { mapToRideOutput } from '../mappers/map-ride-to-output';
@@ -8,7 +8,7 @@ export async function getRideHandler(
   req: Request<{ id: string }>,
   res: Response,
 ) {
-  const ride = await ridesRepository.findById(req.params.id);
+  const ride = await ridesService.findById(req.params.id);
 
   if (!ride) {
     res

@@ -1,13 +1,13 @@
 import { Request, Response } from 'express';
 import { HttpStatus } from '../../../core/types/http-statuses';
 import { createErrorMessages } from '../../../core/utils/error.utils';
-import { driversRepository } from '../../repositories/drivers.repository';
+import { driversService } from '../../application/drivers.service';
 
 export async function deleteDriverHandler(
   req: Request<{ id: string }>,
   res: Response,
 ) {
-  const isDeleted = await driversRepository.delete(req.params.id);
+  const isDeleted = await driversService.delete(req.params.id);
 
   if (!isDeleted) {
     res

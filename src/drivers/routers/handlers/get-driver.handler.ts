@@ -1,14 +1,14 @@
 import { Request, Response } from 'express';
 import { HttpStatus } from '../../../core/types/http-statuses';
 import { createErrorMessages } from '../../../core/utils/error.utils';
-import { driversRepository } from '../../repositories/drivers.repository';
+import { driversService } from '../../application/drivers.service';
 import { mapToDriverOutput } from '../mappers/map-driver-to-output';
 
 export async function getDriverHandler(
   req: Request<{ id: string }>,
   res: Response,
 ) {
-  const driver = await driversRepository.findById(req.params.id);
+  const driver = await driversService.findById(req.params.id);
 
   if (!driver) {
     res

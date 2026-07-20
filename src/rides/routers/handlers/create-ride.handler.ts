@@ -1,8 +1,6 @@
 import { Request, Response } from 'express';
-import { driversRepository } from '../../../drivers/repositories/drivers.repository';
 import { HttpStatus } from '../../../core/types/http-statuses';
-import { ridesRepository } from '../../repositories/rides.repository';
-import { Ride } from '../../types/ride';
+import { ridesService } from '../../application/rides.service';
 import { createErrorMessages } from '../../../core/utils/error.utils';
 import { RideCreateInput } from '../../dto/ride.input';
 import { mapToRideOutput } from '../mappers/map-ride-to-output';
@@ -12,12 +10,10 @@ export async function createRideHandler(
   res: Response,
 ) {
   // Данные приходят в JSON:API-конверте: всё лежит в data.attributes.
-  const attributes = req.body.data.attributes;
+  const createdRide = await ridesService.create(req.body.data.attributes);
 
   // Поездку можно создать только для существующего водителя.
-  const driver = await driversRepository.findById(attributes.driverId);
-
-  if (!driver) {
+  if (!createdRide) {
     res
       .status(HttpStatus.BadRequest)
       .send(
@@ -28,23 +24,5 @@ export async function createRideHandler(
     return;
   }
 
-  // Данные водителя и его машины копируем в поездку в момент создания.
-  const newRide: Ride = {
-    clientName: attributes.clientName,
-    driverId: driver._id.toString(),
-    driverName: driver.name,
-    vehicleLicensePlate: driver.vehicleLicensePlate,
-    vehicleName: `${driver.vehicleMake} ${driver.vehicleModel}`,
-    price: attributes.price,
-    currency: attributes.currency,
-    createdAt: new Date(),
-    updatedAt: null,
-    addresses: {
-      from: attributes.fromAddress,
-      to: attributes.toAddress,
-    },
-  };
-
-  const createdRide = await ridesRepository.create(newRide);
   res.status(HttpStatus.Created).send(mapToRideOutput(createdRide));
 }
