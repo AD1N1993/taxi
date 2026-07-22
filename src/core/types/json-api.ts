@@ -12,9 +12,14 @@ export type JsonApiSingleResponse<T extends ResourceType, A> = {
   data: JsonApiResource<T, A>;
 };
 
-// Ответ со списком ресурсов (meta пока пустой объект).
-export type JsonApiListResponse<T extends ResourceType, A> = {
-  meta: Record<string, never>;
+// Ответ со списком ресурсов. M — тип meta (по умолчанию пустой объект,
+// но модуль может передать свой, например с пагинацией).
+export type JsonApiListResponse<
+  T extends ResourceType,
+  A,
+  M = Record<string, never>,
+> = {
+  meta: M;
   data: JsonApiResource<T, A>[];
 };
 

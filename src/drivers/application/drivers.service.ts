@@ -1,13 +1,16 @@
 import { WithId } from 'mongodb';
 import { Driver } from '../types/driver';
 import { DriverAttributes } from '../dto/driver-attributes';
+import { DriverQueryInput } from '../dto/driver-query.input';
 import { driversRepository } from '../repositories/drivers.repository';
 
 // BLL модуля водителей: бизнес-логика живёт здесь, а не в handler'ах.
 // Сервис ничего не знает про HTTP (req/res/statusCode) — только про данные.
 export const driversService = {
-  async findAll(): Promise<WithId<Driver>[]> {
-    return driversRepository.findAll();
+  async findMany(
+    queryDto: DriverQueryInput,
+  ): Promise<{ items: WithId<Driver>[]; totalCount: number }> {
+    return driversRepository.findMany(queryDto);
   },
 
   async findById(id: string): Promise<WithId<Driver> | null> {

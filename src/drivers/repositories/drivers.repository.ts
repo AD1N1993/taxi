@@ -1,13 +1,29 @@
 import { Driver } from '../types/driver';
 import { ObjectId, WithId } from 'mongodb';
 import { driverCollection } from '../../db/collections';
+import { DriverQueryInput } from '../dto/driver-query.input';
 
 // Репозиторий отвечает ТОЛЬКО за доступ к данным (CRUD).
 // Он не знает про HTTP и не решает, что делать при "не найдено":
 // операции изменения возвращают boolean, а решение о статусе ответа принимает handler.
 export const driversRepository = {
-  async findAll(): Promise<WithId<Driver>[]> {
-    return driverCollection.find().toArray();
+  async findMany(
+    queryDto: DriverQueryInput,
+  ): Promise<{ items: WithId<Driver>[]; totalCount: number }> {
+    const { pageNumber, pageSize, sortBy, sortDirection } = queryDto;
+
+    const skip = (pageNumber - 1) * pageSize;
+
+    const items = await driverCollection
+      .find()
+      .sort({ [sortBy]: sortDirection })
+      .skip(skip)
+      .limit(pageSize)
+      .toArray();
+
+    const totalCount = await driverCollection.countDocuments();
+
+    return { items, totalCount };
   },
 
   async findById(id: string): Promise<WithId<Driver> | null> {
